@@ -1,3 +1,4 @@
+#include <string>
 #include <iostream>
 using namespace std;
 
@@ -326,4 +327,30 @@ void RBT<T1,T2>::print(treenode<T1,T2>* iter){
 template <typename T1,typename T2>
 void RBT<T1,T2>::print_n(){
 cout<<"root"<< root->key << ": " << root->value << endl;
+
+template<typename T1,typename T2>
+void print_map(RBT<T1, T2> m)
+{
+    RBT<string, int>::iterator iter;
+
+    for(iter=m.begin(); iter != m.end(); ++iter){
+        cout << iter->key << ": " << iter->value << endl;
+    }
+}
+
+int main(){
+    RBT<string,int> m;
+   cout << "** First Step **\n";
+    m.insert(make_pair("Global", 10));
+    m.insert(make_pair("Handong", 30));
+    m.insert(make_pair("CSEE", 20));
+    m.insert(make_pair("MCNL", 15));
+    //m.print_n();
+    print_map(m);
+
+    cout<<"\n** Second Step **\n";
+    //m["Pohang"] = 50;
+    //m["Korea"] = 60;
+    //print_map(m);
+    return 0;
 }
