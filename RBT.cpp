@@ -94,7 +94,8 @@ public:
     
     treenode<T1,T2>* find(T1 key, treenode<T1,T2>* b);
     treenode<T1,T2>* left_max(treenode<T1,T2>* b);
-    void delete_choose(int a);
+    treenode<T1,T2>* right_min(treenode<T1,T2>* b);
+    void delete_choose(T1 key);
     
     typedef MyIterator<T1,T2> iterator;
     iterator begin(){
@@ -291,29 +292,168 @@ treenode<T1,T2>* RBT<T1,T2>::left_max(treenode<T1,T2>* b){
 }
 
 template <typename T1,typename T2>
-void RBT<T1,T2>::delete_choose(int a){    
+treenode<T1,T2>* RBT<T1,T2>::right_min(treenode<T1,T2>* b){
+
+    treenode<T1,T2>* c=b->rlink;
+    if(!c)return nullptr;
+    while (c->llink)
+    {
+        c=c->llink;
+    }
+    
+    return c;
+}
+
+template <typename T1,typename T2>
+void RBT<T1,T2>::delete_choose(T1 key){    
     treenode<T1,T2>* target=find(a,root);
     if(!target)return;
 
-    treenode<T1,T2>* instead=left_max(target);
-
-    treenode<T1,T2>* tp = target->plink;
-    treenode<T1,T2>* ip = instead->plink;
-    
-    if(!instead){
-        if(tp->llink==tp)tp->llink=target->rlink;
-        else if(tp->rlink==tp)tp->rlink=target->rlink;
-        if(target->rlink)target->rlink->plink=tp;
-        delete target;
-        return;
+    if(target->color==RED){
+        if(!target->llink&&!target->rlink){
+            if(target->plink->llink==target)target->plink->llink=nullptr;
+            else target->plink->rlink=nullptr;
+            delete target;
+        }
+        else if(!target->llink&&target->rlink){
+            target->key=right_min(target)->key;
+            target->value=right_min(target)->value;
+            delete_choose(right_min(target));
+        }
+        else{
+            target->key=left_max(target)->key;
+            target->value=left_max(target)->value;
+            delete_choose(left_max(target));
+        }
     }
+    else{
+        if(!target->llink&&target->rlink&&right_min(target)->color==RED){
+            target->key=right_min(target)->key;
+            target->value=right_min(target)->value;
+            delete_choose(right_min(target));
+        }
+        else if(target->llink&&left_max(target)->color==RED){
+            target->key=right_min(target)->key;
+            target->value=right_min(target)->value;
+            delete_choose(right_min(target));
+        }
+        else{
+            if(target->plink){
+                if(target==target->plink->llink&&target->plink->rlink->color==RED){//1-1
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->rlink;
+                    p->rlink=s->llink;
+                    s->llink->plink=p;
+                    s->plink=p->plink;
+                    if(p->plink->rlink==p)p->plink->rlink=s;
+                    else p->plink->llink=s;
+                    s->llink=p;
+                    p->plink=s;
 
-    if(ip->rlink==instead)ip->rlink=instead->llink;
-    else if(ip->llink==instead)ip->llink=instead->llink;
-    if(instead->llink)instead->llink->plink=ip;
-    target->k=instead->k;
-    delete instead;
+                }
+                else if(target==target->plink->rlink&&target->plink->llink->color==RED){//1-2
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->llink;
+                    p->llink=s->rlink;
+                    s->rlink->plink=p;
+                    s->plink=p->plink;
+                    if(p->plink->rlink==p)p->plink->rlink=s;
+                    else p->plink->llink=s;
+                    s->rlink=p;
+                    p->plink=s;
 
+                }
+                else if(target==target->plink->llink&&target->plink->rlink->color==BLACK&&target->plink->color==BLACK
+                &&(!target->plink->rlink->llink||target->plink->rlink->llink->color==BLACK)
+                &&(!target->plink->rlink->rlink||target->plink->rlink->rlink->color==BLACK)){//2-1
+                    treenode<T1,T2>* s=target->plink->rlink;
+                    s->color=RED;
+                }
+                else if(target==target->plink->rlink&&target->plink->llink->color==BLACK&&target->plink->color==BLACK
+                &&(!target->plink->llink->llink||target->plink->llink->llink->color==BLACK)
+                &&(!target->plink->llink->rlink||target->plink->llink->rlink->color==BLACK)){//2-2
+                    treenode<T1,T2>* s=target->plink->llink;
+                    s->color=RED;
+                }
+                else if(target==target->plink->llink&&target->plink->rlink->color==BLACK&&target->plink->color==RED
+                &&(!target->plink->rlink->llink||target->plink->rlink->llink->color==BLACK)
+                &&(!target->plink->rlink->rlink||target->plink->rlink->rlink->color==BLACK)){//3-1
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->rlink;
+                    p->color=BLACK;
+                    s->color=RED;
+                }
+                else if(target==target->plink->rlink&&target->plink->llink->color==BLACK&&target->plink->color==RED
+                &&(!target->plink->llink->llink||target->plink->llink->llink->color==BLACK)
+                &&(!target->plink->llink->rlink||target->plink->llink->rlink->color==BLACK)){//3-2
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->llink;
+                    p->color=BLACK;
+                    s->color=RED;
+                }
+                else if(target==target->plink->llink&&target->plink->rlink->llink&&target->plink->rlink->llink->color==RED){//4-1
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->rlink;
+                    treenode<T1,T2>* sl=target->plink->rlink->llink;
+                    p->rlink=sl;
+                    sl->plink=p;
+                    s->llink=s->llink->rlink;
+                    if(s->llink->rlink)s->llink->rlink->plink=s;
+                    sl->rlink=s;
+                    s->plink=sl;
+                    sl->color=BLACK;
+                    s->color=RED;
+                }
+                else if(target==target->plink->rlink&&target->plink->llink->rlink&&target->plink->llink->rlink->color==RED){//4-2
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->llink;
+                    treenode<T1,T2>* sr=target->plink->llink->rlink;
+                    p->llink=sr;
+                    sr->plink=p;
+                    s->rlink=s->rlink->llink;
+                    if(s->rlink->llink)s->rlink->llink->plink=s;
+                    sr->llink=s;
+                    s->plink=sr;
+                    sr->color=BLACK;
+                    s->color=RED;
+                }
+                else if(target==target->plink->llink&&target->plink->rlink->rlink&&target->plink->rlink->rlink->color==RED){//5-1
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->rlink;
+                    treenode<T1,T2>* sr=target->plink->rlink->rlink;
+                    s->plink=p->plink;
+                    if(s->plink){
+                        if(s->plink->rlink==p)s->plink->rlink=s;
+                        else s->plink->llink=s;
+                    }
+                    p->rlink=s->llink;
+                    if(p->rlink)p->rlink->plink=p;
+                    s->llink=p;
+                    p->plink=s;
+                    s->color=p->color;
+                    p->color=BLACK;
+                    sr->color=BLACK;
+                }
+                else if(target==target->plink->rlink&&target->plink->llink->llink&&target->plink->llink->llink->color==RED){//5-2
+                    treenode<T1,T2>* p=target->plink;
+                    treenode<T1,T2>* s=target->plink->llink;
+                    treenode<T1,T2>* sl=target->plink->llink->llink;
+                    s->plink=p->plink;
+                    if(s->plink){
+                        if(s->plink->rlink==p)s->plink->rlink=s;
+                        else s->plink->llink=s;
+                    }
+                    p->llink=s->rlink;
+                    if(p->llink)p->llink->plink=p;
+                    s->rlink=p;
+                    p->plink=s;
+                    s->color=p->color;
+                    p->color=BLACK;
+                    sl->color=BLACK;
+                }
+            }
+        }
+    }
 }
 
 template <typename T1,typename T2>
